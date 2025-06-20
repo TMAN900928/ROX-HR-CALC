@@ -68,7 +68,7 @@
       <ul>
         <li>Age &lt;1 yr: RR &gt; 60, HR &gt; 180 bpm, SBP &lt; 70</li>
         <li>Age 1–2 yr: RR &gt; 50, HR &gt; 160 bpm, SBP &lt; 75</li>
-        <li>Any age: HR &lt; 80 or RR &lt; 25</li>
+        <li>Any age: HR &lt; 100 or RR &lt; 30</li>
       </ul>
     </div>
   </div>
@@ -100,8 +100,8 @@
 
       let highHR = (ageGroup === "<1" && hr > 180) || (ageGroup === "1-2" && hr > 160);
       let highRR = (ageGroup === "<1" && rr > 60) || (ageGroup === "1-2" && rr > 50);
-      let lowHR = hr < 80;
-      let lowRR = rr < 25;
+      let lowHR = hr < 100;
+      let lowRR = rr < 30;
       let lowROXHR = roxhr < 3;
       let lowBP = (ageGroup === "<1" && bp < 70) || (ageGroup === "1-2" && bp < 75);
 
