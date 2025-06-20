@@ -21,19 +21,6 @@
   <div class="container">
     <h2>ROX-HR Index Calculator (Pediatrics &lt;2 yo)</h2>
 
-    <!-- Patient Info -->
-    <label>Patient Name</label>
-    <input type="text" id="patientName" placeholder="e.g. Aisyah Binti Ahmad">
-
-    <label>MRN Number</label>
-    <input type="text" id="mrn" placeholder="e.g. HTJ123456">
-
-    <label>Date of Birth</label>
-    <input type="date" id="dob">
-
-    <label>Date of HFNC Initiation</label>
-    <input type="date" id="hfncDate">
-
     <!-- Clinical Inputs -->
     <label>Age Group</label>
     <select id="ageGroup">
@@ -75,11 +62,6 @@
 
   <script>
     function calculate() {
-      const patientName = document.getElementById('patientName').value;
-      const mrn = document.getElementById('mrn').value;
-      const dob = document.getElementById('dob').value;
-      const hfncDate = document.getElementById('hfncDate').value;
-
       const ageGroup = document.getElementById('ageGroup').value;
       const spo2 = parseFloat(document.getElementById('spo2').value);
       const fio2 = parseFloat(document.getElementById('fio2').value);
@@ -124,16 +106,9 @@
         messages.push("✅ ROX-HR and vital signs are within safe range.");
       }
 
-      const patientInfo = `
-        <strong>Patient:</strong> ${patientName || '-'}<br>
-        <strong>MRN:</strong> HTJ${mrn || '-'}<br>
-        <strong>DOB:</strong> ${dob || '-'}<br>
-        <strong>HFNC Start Date:</strong> ${hfncDate || '-'}<br><br>
-      `;
-
       document.getElementById('result').className = statusClass;
       document.getElementById('result').innerHTML = `
-        ${patientInfo}
+        
         ROX: ${rox.toFixed(2)}<br>
         ROX-HR: ${roxhr.toFixed(2)}<br><br>
         ${messages.join("<br>")}
