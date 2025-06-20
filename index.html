@@ -1,0 +1,56 @@
+<script>
+function calculateROXHR() {
+const ageGroup = document.getElementById('ageGroup').value;
+const spo2 = parseFloat(document.getElementById('spo2').value);
+const fio2 = parseFloat(document.getElementById('fio2').value);
+const rr = parseFloat(document.getElementById('rr').value);
+const hr = parseFloat(document.getElementById('hr').value);
+
+if (isNaN(spo2) || isNaN(fio2) || isNaN(rr) || isNaN(hr) || fio2 === 0 || rr === 0 || hr === 0) {
+document.getElementById('result').innerHTML = "❗ Please enter valid numeric values.";
+return;
+}
+
+const rox = (spo2 / fio2) / rr;
+const roxhr = (rox / hr) * 100;
+let roxhrMsg = roxhr < 3
+? "⚠️ ROX-HR < 3 → High risk of HFNC failure"
+: "✅ ROX-HR ≥ 3 → Within safer range";
+
+// PEWS alert logic (popup + written)
+let rrAlert = false;
+let hrAlert = false;
+let alertText = "";
+
+if (ageGroup === "<1") {
+if (rr > 60) {
+rrAlert = true;
+alertText += "⚠️ RR > 60 (above threshold)<br>";
+}
+if (hr > 180) {
+hrAlert = true;
+alertText += "⚠️ HR > 180 bpm (above threshold)<br>";
+}
+} else if (ageGroup === "1-2") {
+if (rr > 50) {
+rrAlert = true;
+alertText += "⚠️ RR > 50 (above threshold)<br>";
+}
+if (hr > 160) {
+hrAlert = true;
+alertText += "⚠️ HR > 160 bpm (above threshold)<br>";
+}
+}
+
+if (rrAlert || hrAlert) {
+alert("⚠️ Alert: RR or HR is above the threshold for this age group. Please inform the team.");
+}
+
+document.getElementById('result').innerHTML = `
+<strong>ROX Index:</strong> ${rox.toFixed(2)}<br>
+<strong>ROX-HR Index:</strong> ${roxhr.toFixed(2)}<br>
+${roxhrMsg}<br><br>
+${alertText}
+`;
+}
+</script> 
