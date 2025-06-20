@@ -1,56 +1,95 @@
-<script>
-  function calculateROXHR() {
-    const ageGroup = document.getElementById('ageGroup').value;
-    const spo2 = parseFloat(document.getElementById('spo2').value);
-    const fio2 = parseFloat(document.getElementById('fio2').value);
-    const rr = parseFloat(document.getElementById('rr').value);
-    const hr = parseFloat(document.getElementById('hr').value);
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ROX-HR Pediatric Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    .container { background: white; padding: 20px; max-width: 600px; margin: auto;
+                 border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, select, button { width: 100%; margin-top: 15px; padding: 8px; font-size: 1rem; }
+    button { background: #007acc; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    .note { margin-top: 20px; padding: 15px; background: #e6f2ff; border-left: 4px solid #007acc; }
+    #result { margin-top: 20px; font-weight: bold; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ROX-HR Index Calculator (Pediatrics &lt;2 yo)</h2>
 
-    if (isNaN(spo2) || isNaN(fio2) || isNaN(rr) || isNaN(hr) || fio2 === 0 || rr === 0 || hr === 0) {
-      document.getElementById('result').innerHTML = "❗ Please enter valid numeric values.";
-      return;
+    <label>Age Group</label>
+    <select id="ageGroup">
+      <option value="<1">Below 1 year</option>
+      <option value="1-2">1–2 years</option>
+    </select>
+
+    <label>SpO₂ (%)</label>
+    <input type="number" id="spo2" placeholder="e.g. 88">
+
+    <label>FiO₂ (decimal, e.g. 0.70)</label>
+    <input type="number" step="0.01" id="fio2" placeholder="e.g. 0.70">
+
+    <label>Respiratory Rate (breaths/min)</label>
+    <input type="number" id="rr" placeholder="e.g. 55">
+
+    <label>Heart Rate (beats/min)</label>
+    <input type="number" id="hr" placeholder="e.g. 170">
+
+    <button onclick="calculate()">Calculate ROX-HR</button>
+
+    <div id="result"></div>
+
+    <div class="note">
+      <strong>Guideline for children &lt;2 years with LRTI on HFNC:</strong><br>
+      • Monitor HR, RR, SpO₂ hourly × 6 hrs, then every 4 hrs.<br>
+      • BP on admission and every 4 hrs.<br>
+      • Inform if:
+      <ul>
+        <li>Age &lt;1 yr: RR &gt; 60 or HR &gt; 180 bpm</li>
+        <li>Age 1–2 yr: RR &gt; 50 or HR &gt; 160 bpm</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    function calculate() {
+      const ageGroup = document.getElementById('ageGroup').value;
+      const spo2 = parseFloat(document.getElementById('spo2').value);
+      const fio2 = parseFloat(document.getElementById('fio2').value);
+      const rr = parseFloat(document.getElementById('rr').value);
+      const hr = parseFloat(document.getElementById('hr').value);
+
+      if (![spo2,fio2,rr,hr].every(v => !isNaN(v) && v > 0)) {
+        document.getElementById('result').innerHTML = "❗ Please enter valid numeric values.";
+        return;
+      }
+
+      const rox = (spo2 / fio2) / rr;
+      const roxhr = (rox / hr) * 100;
+      const roxhrMsg = roxhr < 3
+        ? "⚠️ ROX-HR < 3 → High risk of HFNC failure"
+        : "✅ ROX-HR ≥ 3 → Within safer range";
+
+      let alertLines = [];
+      if ( (ageGroup === "<1" && rr > 60) || (ageGroup === "1-2" && rr > 50) ) {
+        alertLines.push("⚠️ RR above threshold");
+      }
+      if ( (ageGroup === "<1" && hr > 180) || (ageGroup === "1-2" && hr > 160) ) {
+        alertLines.push("⚠️ HR above threshold");
+      }
+
+      if (alertLines.length) {
+        alert("⚠️ " + alertLines.join(" and ") + ". Please inform the team.");
+      }
+
+      document.getElementById('result').innerHTML = `
+        ROX: ${rox.toFixed(2)}<br>
+        ROX-HR: ${roxhr.toFixed(2)}<br>
+        ${roxhrMsg}<br>
+        ${alertLines.join("<br>")}
+      `;
     }
-
-    const rox = (spo2 / fio2) / rr;
-    const roxhr = (rox / hr) * 100;
-    let roxhrMsg = roxhr < 3
-      ? "⚠️ ROX-HR < 3 → High risk of HFNC failure"
-      : "✅ ROX-HR ≥ 3 → Within safer range";
-
-    // PEWS alert logic (popup + written)
-    let rrAlert = false;
-    let hrAlert = false;
-    let alertText = "";
-
-    if (ageGroup === "<1") {
-      if (rr > 60) {
-        rrAlert = true;
-        alertText += "⚠️ RR > 60 (above threshold)<br>";
-      }
-      if (hr > 180) {
-        hrAlert = true;
-        alertText += "⚠️ HR > 180 bpm (above threshold)<br>";
-      }
-    } else if (ageGroup === "1-2") {
-      if (rr > 50) {
-        rrAlert = true;
-        alertText += "⚠️ RR > 50 (above threshold)<br>";
-      }
-      if (hr > 160) {
-        hrAlert = true;
-        alertText += "⚠️ HR > 160 bpm (above threshold)<br>";
-      }
-    }
-
-    if (rrAlert || hrAlert) {
-      alert("⚠️ Alert: RR or HR is above the threshold for this age group. Please inform the team.");
-    }
-
-    document.getElementById('result').innerHTML = `
-      <strong>ROX Index:</strong> ${rox.toFixed(2)}<br>
-      <strong>ROX-HR Index:</strong> ${roxhr.toFixed(2)}<br>
-      ${roxhrMsg}<br><br>
-      ${alertText}
-    `;
-  }
-</script>
+  </script>
+</body>
+</html>
