@@ -21,6 +21,20 @@
   <div class="container">
     <h2>ROX-HR Index Calculator (Pediatrics &lt;2 yo)</h2>
 
+    <!-- Patient Info -->
+    <label>Patient Name</label>
+    <input type="text" id="patientName" placeholder="e.g. Aisyah Binti Ahmad">
+
+    <label>MRN Number</label>
+    <input type="text" id="mrn" placeholder="e.g. HTJS123456">
+
+    <label>Date of Birth</label>
+    <input type="date" id="dob">
+
+    <label>Date of HFNC Initiation</label>
+    <input type="date" id="hfncDate">
+
+    <!-- Clinical Inputs -->
     <label>Age Group</label>
     <select id="ageGroup">
       <option value="<1">Below 1 year</option>
@@ -39,6 +53,9 @@
     <label>Heart Rate (beats/min)</label>
     <input type="number" id="hr" placeholder="e.g. 170">
 
+    <label>Systolic Blood Pressure (mmHg)</label>
+    <input type="number" id="bp" placeholder="e.g. 85">
+
     <button onclick="calculate()">Calculate ROX-HR</button>
 
     <div id="result"></div>
@@ -49,57 +66,74 @@
       • BP on admission and every 4 hrs.<br>
       • Inform if:
       <ul>
-        <li>Age &lt;1 yr: RR &gt; 60 or HR &gt; 180 bpm</li>
-        <li>Age 1–2 yr: RR &gt; 50 or HR &gt; 160 bpm</li>
+        <li>Age &lt;1 yr: RR &gt; 60, HR &gt; 180 bpm, SBP &lt; 70</li>
+        <li>Age 1–2 yr: RR &gt; 50, HR &gt; 160 bpm, SBP &lt; 75</li>
+        <li>Any age: HR &lt; 80 or RR &lt; 25</li>
       </ul>
     </div>
   </div>
 
   <script>
     function calculate() {
+      const patientName = document.getElementById('patientName').value;
+      const mrn = document.getElementById('mrn').value;
+      const dob = document.getElementById('dob').value;
+      const hfncDate = document.getElementById('hfncDate').value;
+
       const ageGroup = document.getElementById('ageGroup').value;
       const spo2 = parseFloat(document.getElementById('spo2').value);
       const fio2 = parseFloat(document.getElementById('fio2').value);
       const rr = parseFloat(document.getElementById('rr').value);
       const hr = parseFloat(document.getElementById('hr').value);
+      const bp = parseFloat(document.getElementById('bp').value);
 
-      if (![spo2, fio2, rr, hr].every(v => !isNaN(v) && v > 0)) {
+      if (![spo2, fio2, rr, hr, bp].every(v => !isNaN(v) && v > 0)) {
         document.getElementById('result').innerHTML = "❗ Please enter valid numeric values.";
         return;
       }
 
       const rox = (spo2 / fio2) / rr;
       const roxhr = (rox / hr) * 100;
-      let statusClass = "green";
+
       let messages = [];
+      let statusClass = "green";
 
-      let highRR = false, highHR = false, lowROXHR = false;
-
-      // Check thresholds
-      if (ageGroup === "<1" && rr > 60) highRR = true;
-      if (ageGroup === "1-2" && rr > 50) highRR = true;
-      if (ageGroup === "<1" && hr > 180) highHR = true;
-      if (ageGroup === "1-2" && hr > 160) highHR = true;
-      if (roxhr < 3) lowROXHR = true;
+      let highHR = (ageGroup === "<1" && hr > 180) || (ageGroup === "1-2" && hr > 160);
+      let highRR = (ageGroup === "<1" && rr > 60) || (ageGroup === "1-2" && rr > 50);
+      let lowHR = hr < 80;
+      let lowRR = rr < 25;
+      let lowROXHR = roxhr < 3;
+      let lowBP = (ageGroup === "<1" && bp < 70) || (ageGroup === "1-2" && bp < 75);
 
       if (highRR) messages.push("⚠️ RR above threshold");
       if (highHR) messages.push("⚠️ HR above threshold");
+      if (lowRR) messages.push("⚠️ RR below threshold");
+      if (lowHR) messages.push("⚠️ HR below threshold");
       if (lowROXHR) messages.push("⚠️ ROX-HR < 3 → High risk of HFNC failure");
+      if (lowBP) messages.push("⚠️ Systolic BP below APLS normal range");
 
-      // Evaluate severity
-      const issues = [highRR, highHR, lowROXHR].filter(Boolean).length;
-      if (issues >= 2 || lowROXHR) {
+      const issues = [highHR, highRR, lowHR, lowRR, lowROXHR, lowBP].filter(Boolean).length;
+
+      if (issues >= 1) {
         statusClass = "red";
         messages.push("❗ PLEASE ALERT THE SPECIALIST");
       } else if (issues === 1) {
         statusClass = "yellow";
-        messages.push("⚠️ One parameter slightly elevated. Monitor closely.");
+        messages.push("⚠️ One parameter slightly abnormal. Monitor closely.");
       } else {
         messages.push("✅ ROX-HR and vital signs are within safe range.");
       }
 
+      const patientInfo = `
+        <strong>Patient:</strong> ${patientName || '-'}<br>
+        <strong>MRN:</strong> ${mrn || '-'}<br>
+        <strong>DOB:</strong> ${dob || '-'}<br>
+        <strong>HFNC Start Date:</strong> ${hfncDate || '-'}<br><br>
+      `;
+
       document.getElementById('result').className = statusClass;
       document.getElementById('result').innerHTML = `
+        ${patientInfo}
         ROX: ${rox.toFixed(2)}<br>
         ROX-HR: ${roxhr.toFixed(2)}<br><br>
         ${messages.join("<br>")}
