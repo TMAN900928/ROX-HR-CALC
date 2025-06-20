@@ -11,7 +11,10 @@
     input, select, button { width: 100%; margin-top: 15px; padding: 8px; font-size: 1rem; }
     button { background: #007acc; color: white; border: none; cursor: pointer; border-radius: 4px; }
     .note { margin-top: 20px; padding: 15px; background: #e6f2ff; border-left: 4px solid #007acc; }
-    #result { margin-top: 20px; font-weight: bold; line-height: 1.5; }
+    #result { margin-top: 20px; font-weight: bold; line-height: 1.5; padding: 10px; border-radius: 6px; }
+    .red { color: #b30000; background: #ffe6e6; border: 2px solid #b30000; text-transform: uppercase; }
+    .yellow { color: #b38f00; background: #fffbe6; border: 2px solid #b38f00; }
+    .green { color: #006600; background: #e6ffe6; border: 2px solid #006600; }
   </style>
 </head>
 <body>
@@ -60,34 +63,46 @@
       const rr = parseFloat(document.getElementById('rr').value);
       const hr = parseFloat(document.getElementById('hr').value);
 
-      if (![spo2,fio2,rr,hr].every(v => !isNaN(v) && v > 0)) {
+      if (![spo2, fio2, rr, hr].every(v => !isNaN(v) && v > 0)) {
         document.getElementById('result').innerHTML = "❗ Please enter valid numeric values.";
         return;
       }
 
       const rox = (spo2 / fio2) / rr;
       const roxhr = (rox / hr) * 100;
-      const roxhrMsg = roxhr < 3
-        ? "⚠️ ROX-HR < 3 → High risk of HFNC failure"
-        : "✅ ROX-HR ≥ 3 → Within safer range";
+      let statusClass = "green";
+      let messages = [];
 
-      let alertLines = [];
-      if ( (ageGroup === "<1" && rr > 60) || (ageGroup === "1-2" && rr > 50) ) {
-        alertLines.push("⚠️ RR above threshold");
-      }
-      if ( (ageGroup === "<1" && hr > 180) || (ageGroup === "1-2" && hr > 160) ) {
-        alertLines.push("⚠️ HR above threshold");
+      let highRR = false, highHR = false, lowROXHR = false;
+
+      // Check thresholds
+      if (ageGroup === "<1" && rr > 60) highRR = true;
+      if (ageGroup === "1-2" && rr > 50) highRR = true;
+      if (ageGroup === "<1" && hr > 180) highHR = true;
+      if (ageGroup === "1-2" && hr > 160) highHR = true;
+      if (roxhr < 3) lowROXHR = true;
+
+      if (highRR) messages.push("⚠️ RR above threshold");
+      if (highHR) messages.push("⚠️ HR above threshold");
+      if (lowROXHR) messages.push("⚠️ ROX-HR < 3 → High risk of HFNC failure");
+
+      // Evaluate severity
+      const issues = [highRR, highHR, lowROXHR].filter(Boolean).length;
+      if (issues >= 2 || lowROXHR) {
+        statusClass = "red";
+        messages.push("❗ PLEASE ALERT THE SPECIALIST");
+      } else if (issues === 1) {
+        statusClass = "yellow";
+        messages.push("⚠️ One parameter slightly elevated. Monitor closely.");
+      } else {
+        messages.push("✅ ROX-HR and vital signs are within safe range.");
       }
 
-      if (alertLines.length) {
-        alert("⚠️ " + alertLines.join(" and ") + ". Please inform the team.");
-      }
-
+      document.getElementById('result').className = statusClass;
       document.getElementById('result').innerHTML = `
         ROX: ${rox.toFixed(2)}<br>
-        ROX-HR: ${roxhr.toFixed(2)}<br>
-        ${roxhrMsg}<br>
-        ${alertLines.join("<br>")}
+        ROX-HR: ${roxhr.toFixed(2)}<br><br>
+        ${messages.join("<br>")}
       `;
     }
   </script>
